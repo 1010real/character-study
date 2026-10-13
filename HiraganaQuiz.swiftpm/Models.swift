@@ -27,7 +27,7 @@ final class AnswerRecord {
     /// 設問 ID（例: "hira_ka"）
     var questionID: String = ""
     var isCorrect: Bool = false
-    /// 音声認識で聞き取った文字列（判定の確認用）
+    /// 音声認識で聞き取った文字列（判定の確認用）。「えを えらぶ」モードでは選んだ絵の言葉
     var heardText: String = ""
     /// 1回の10問セットを表す ID
     var sessionID: UUID = UUID()

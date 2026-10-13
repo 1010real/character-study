@@ -58,7 +58,18 @@ enum Words {
         ("futon", "ふとん", ["布団"]),
     ]
 
+    /// 「ことば」モード（声に出して読む）の問題
     static let questions: [Question] = table.map {
-        Question(id: "word_\($0.0)", kana: $0.1, alternatives: $0.2)
+        Question(id: "word_\($0.0)", kana: $0.1, alternatives: $0.2, imageName: imageName($0.0))
+    }
+
+    /// 「えを えらぶ」モードの問題。読む問題と記録を分けるため ID は「pict_ + ローマ字」。
+    static let pictureQuestions: [Question] = table.map {
+        Question(id: "pict_\($0.0)", kana: $0.1, imageName: imageName($0.0))
+    }
+
+    /// 絵は Assets.xcassets/Words/word_<ローマ字>.imageset に入っている
+    private static func imageName(_ romaji: String) -> String {
+        "word_\(romaji)"
     }
 }

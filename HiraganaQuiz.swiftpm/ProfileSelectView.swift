@@ -168,7 +168,7 @@ struct ProfileHomeView: View {
                         .padding(.vertical, 14)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(mode == .hiragana ? .orange : .pink)
+                .tint(tint(for: mode))
             }
 
             Spacer()
@@ -179,6 +179,14 @@ struct ProfileHomeView: View {
                 Label("きろく（おうちのかたへ）", systemImage: "chart.bar")
             }
             .padding(.bottom, 24)
+        }
+    }
+
+    private func tint(for mode: QuizMode) -> Color {
+        switch mode {
+        case .hiragana: return .orange
+        case .word: return .pink
+        case .picture: return .teal
         }
     }
 }

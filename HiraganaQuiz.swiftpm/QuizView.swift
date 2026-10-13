@@ -17,8 +17,10 @@ struct QuizView: View {
                     permissionMessage
                 } else if model.phase == .finished {
                     resultView
-                } else {
+                } else if model.mode.usesVoice {
                     questionView
+                } else {
+                    pictureQuestionView
                 }
             } else {
                 ProgressView()
@@ -29,7 +31,8 @@ struct QuizView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             guard authorized == nil else { return }
-            authorized = await SpeechListener.requestAuthorization()
+            // 絵を選ぶモードはマイクを使わないので許可はいらない
+            authorized = model.mode.usesVoice ? await SpeechListener.requestAuthorization() : true
             model.start()
         }
         .onDisappear { model.cancel() }
@@ -87,6 +90,80 @@ struct QuizView: View {
         case 1: return 180
         case 2: return 130
         default: return 96
+        }
+    }
+
+    // MARK: - 絵を選ぶ問題
+
+    private var pictureQuestionView: some View {
+        VStack(spacing: 16) {
+            Text("\(model.index + 1) / \(model.questions.count)")
+                .font(.system(size: 22, weight: .semibold, design: .rounded))
+                .foregroundStyle(.secondary)
+
+            Text(model.current?.kana ?? "")
+                .font(.system(size: 72, weight: .bold, design: .rounded))
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .padding(.horizontal, 32)
+                .padding(.vertical, 8)
+                .background(cardColor.opacity(0.18), in: RoundedRectangle(cornerRadius: 28))
+
+            Text(model.message)
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .multilineTextAlignment(.center)
+                .frame(minHeight: 56)
+
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)],
+                      spacing: 16) {
+                ForEach(model.options) { option in
+                    Button {
+                        Task { await model.choose(option) }
+                    } label: {
+                        Image(option.imageName ?? "")
+                            .resizable()
+                            .scaledToFit()
+                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(borderColor(for: option), lineWidth: 6)
+                            )
+                            .overlay(alignment: .topTrailing) {
+                                if model.phase == .correct, option.id == model.current?.id {
+                                    Text("⭕️").font(.system(size: 44)).offset(x: 8, y: -8)
+                                }
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(model.phase != .ready)
+                    .accessibilityLabel(option.kana)
+                }
+            }
+            .frame(maxWidth: 480)
+            .animation(.spring, value: model.phase)
+
+            if model.phase == .wrong {
+                Button {
+                    model.next()
+                } label: {
+                    Label("つぎへ", systemImage: "arrow.right")
+                }
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .buttonStyle(.bordered)
+                .tint(.orange)
+            }
+        }
+    }
+
+    /// 答えたあとに、正解の絵を緑、まちがえて選んだ絵を赤でかこむ
+    private func borderColor(for option: Question) -> Color {
+        switch model.phase {
+        case .correct, .wrong:
+            if option.id == model.current?.id { return .green }
+            if option.id == model.selectedID { return .red }
+            return .clear
+        default:
+            return .clear
         }
     }
 
