@@ -6,8 +6,8 @@ struct QuizView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var authorized: Bool?
 
-    init(profile: Profile, context: ModelContext) {
-        _model = StateObject(wrappedValue: QuizModel(profile: profile, context: context))
+    init(profile: Profile, mode: QuizMode, context: ModelContext) {
+        _model = StateObject(wrappedValue: QuizModel(profile: profile, mode: mode, context: context))
     }
 
     var body: some View {
@@ -25,6 +25,8 @@ struct QuizView: View {
             }
         }
         .padding()
+        .navigationTitle(model.mode.title)
+        .navigationBarTitleDisplayMode(.inline)
         .task {
             guard authorized == nil else { return }
             authorized = await SpeechListener.requestAuthorization()
@@ -50,8 +52,11 @@ struct QuizView: View {
                 .foregroundStyle(.secondary)
 
             Text(model.current?.kana ?? "")
-                .font(.system(size: 180, weight: .bold, design: .rounded))
-                .frame(width: 260, height: 260)
+                .font(.system(size: kanaFontSize, weight: .bold, design: .rounded))
+                .lineLimit(1)
+                .minimumScaleFactor(0.3)
+                .padding(.horizontal, 24)
+                .frame(minWidth: 260, maxWidth: 360, minHeight: 260, maxHeight: 260)
                 .background(cardColor.opacity(0.18), in: RoundedRectangle(cornerRadius: 40))
                 .overlay(alignment: .topTrailing) {
                     if model.phase == .correct {
@@ -73,6 +78,15 @@ struct QuizView: View {
 
             controls
                 .frame(minHeight: 140)
+        }
+    }
+
+    /// 文字数が多いほど小さくして、カードに収める
+    private var kanaFontSize: CGFloat {
+        switch model.current?.kana.count ?? 1 {
+        case 1: return 180
+        case 2: return 130
+        default: return 96
         }
     }
 

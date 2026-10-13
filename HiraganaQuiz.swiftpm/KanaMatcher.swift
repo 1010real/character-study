@@ -3,16 +3,22 @@ import Foundation
 /// 音声認識の結果が、出題したひらがなの発音と合っているかを判定する。
 enum KanaMatcher {
     /// 候補のどれか1つでも合っていれば正解。
-    static func matches(target: String, candidates: [String]) -> Bool {
-        candidates.contains { matches(target: target, heard: $0) }
+    static func matches(_ question: Question, candidates: [String]) -> Bool {
+        candidates.contains { matches(question, heard: $0) }
     }
 
-    static func matches(target: String, heard: String) -> Bool {
+    static func matches(_ question: Question, heard: String) -> Bool {
+        let target = question.kana
         let accepted = [target] + (Hiragana.sameSound[target].map(Array.init) ?? [])
+        let core = String(heard.filter { !$0.isWhitespace && !$0.isPunctuation && $0 != "ー" })
+
+        // 「いぬ」→「犬」のように、問題ごとに登録した書き方と同じなら正解
+        if question.alternatives.contains(core) {
+            return true
+        }
 
         // 1音だけの発話は「歩」「木」のような同じ音の漢字1文字で返ってくることが多い。
         // 漢字1文字の読みは1つに決まらない（「歩」は ほ・ふ・ある…）ので、表で判定する。
-        let core = heard.filter { !$0.isWhitespace && !$0.isPunctuation && $0 != "ー" }
         if let kanji = core.first, core.allSatisfy({ $0 == kanji }),
            accepted.contains(where: { Hiragana.kanjiHomophones[$0]?.contains(kanji) == true }) {
             return true
@@ -23,14 +29,14 @@ enum KanaMatcher {
         return accepted.contains { isSameSound(kana: $0, reading: reading) }
     }
 
-    /// 「か」「かあ」「かっ」「かか」のように、目標の文字＋（同じ文字・母音・小さい母音・っ）だけなら同じ音とみなす。
+    /// 「か」「かあ」「かっ」「かか」「いぬー」のように、目標＋（最後の文字・その母音・小さい母音・っ）だけなら同じ音とみなす。
     private static func isSameSound(kana: String, reading: String) -> Bool {
         guard reading.hasPrefix(kana) else { return false }
         let rest = reading.dropFirst(kana.count)
         if rest.isEmpty { return true }
 
         var allowed: Set<Character> = ["っ"]
-        allowed.formUnion(kana)
+        if let last = kana.last { allowed.insert(last) }
         if let vowel = vowel(of: kana) {
             allowed.insert(vowel)
             if let small = smallVowels[vowel] { allowed.insert(small) }

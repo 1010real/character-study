@@ -3,7 +3,10 @@ import Foundation
 /// 出題1問ぶんの定義。`id` は記録に使うので、一度決めたら変えないこと。
 struct Question: Identifiable, Hashable {
     let id: String
+    /// 画面に出すひらがな（1文字、または言葉）
     let kana: String
+    /// 音声認識が返しそうな別の書き方（「いぬ」→「犬」など）。これと一致しても正解にする。
+    var alternatives: [String] = []
 }
 
 enum Hiragana {
@@ -24,10 +27,6 @@ enum Hiragana {
     static let questions: [Question] = table.map { Question(id: "hira_\($0.0)", kana: $0.1) }
 
     static let allKana: [String] = questions.map(\.kana)
-
-    static func question(id: String) -> Question? {
-        questions.first { $0.id == id }
-    }
 
     /// 同じ音として扱う文字（「を」は「お」と同じ発音）
     static let sameSound: [String: Set<String>] = [
