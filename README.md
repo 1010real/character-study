@@ -18,18 +18,27 @@
 - Mac と Xcode 15 以降（App Store から無料でインストールできます）
 - iPhone で動かす場合: iOS 17 以降の iPhone と USB ケーブル、Apple ID（無料で可）
 
+### 最初に1回だけ：署名の設定（Mac・iPhone 共通）
+
+アプリを動かすには「誰が作ったか」の署名が必要です。設定しないと
+`Signing for "HiraganaQuiz" requires a development team` というエラーでビルドが止まります。
+
+1. Xcode > Settings… > **Accounts** で、左下の「＋」→「Apple ID」から自分の Apple ID を追加する（無料の Apple ID で可）
+2. Finder で `HiraganaQuiz.swiftpm` をダブルクリックして Xcode で開く
+3. 左のファイル一覧の一番上（HiraganaQuiz）を選ぶ → **Signing & Capabilities** タブ → **Team** で
+   「（自分の名前）(Personal Team)」を選ぶ
+4. Xcode が `Package.swift` の `teamIdentifier` に Team ID（英数字10桁）を書き込むので、この変更はコミットしておく
+
 ### Mac で動かす（Apple Silicon の Mac）
 
-1. このリポジトリを clone し、Finder で `HiraganaQuiz.swiftpm` をダブルクリックして Xcode で開く
+1. 上の「署名の設定」を済ませる
 2. 画面上部の実行先から **My Mac (Designed for iPad)** を選ぶ
 3. ▶︎（Run）を押す。初回はマイクと音声認識の許可を求められるので「許可」を選ぶ
 
 ### iPhone で動かす
 
 1. iPhone を Mac にケーブルでつなぐ
-2. Xcode で `HiraganaQuiz.swiftpm` を開き、左のファイル一覧の一番上（HiraganaQuiz）を選ぶ →
-   **Signing & Capabilities** の **Team** で自分の Apple ID（Personal Team）を選ぶ。
-   Apple ID がまだ登録されていなければ Xcode > Settings > Accounts で追加する
+2. 上の「署名の設定」を済ませる
 3. 実行先に自分の iPhone を選んで ▶︎ を押す
 4. 初回は iPhone 側で次の設定が必要です
    - 設定 > プライバシーとセキュリティ > **デベロッパモード** をオンにする（iPhone が再起動します）
