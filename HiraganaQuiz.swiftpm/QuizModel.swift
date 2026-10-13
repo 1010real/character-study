@@ -13,6 +13,7 @@ final class QuizModel: ObservableObject {
     }
 
     let questionCount = 10
+    let mode: QuizMode
 
     @Published private(set) var questions: [Question] = []
     @Published private(set) var index = 0
@@ -33,8 +34,9 @@ final class QuizModel: ObservableObject {
     /// いまの問題で何回目の回答か
     private var attempt = 1
 
-    init(profile: Profile, context: ModelContext, picker: any QuestionPicker = RandomQuestionPicker()) {
+    init(profile: Profile, mode: QuizMode, context: ModelContext, picker: any QuestionPicker = RandomQuestionPicker()) {
         self.profile = profile
+        self.mode = mode
         self.context = context
         self.picker = picker
     }
@@ -45,7 +47,7 @@ final class QuizModel: ObservableObject {
 
     func start() {
         sessionID = UUID()
-        questions = picker.pick(count: questionCount, history: profile.answers)
+        questions = picker.pick(from: mode.questions, count: questionCount, history: profile.answers)
         index = 0
         score = 0
         attempt = 1
@@ -63,7 +65,7 @@ final class QuizModel: ObservableObject {
 
         let candidates: [String]
         do {
-            candidates = try await listener.listen(hints: Hiragana.allKana)
+            candidates = try await listener.listen(hints: mode.recognitionHints)
         } catch {
             errorMessage = error.localizedDescription
             message = "こえに だして よんでね"
@@ -83,7 +85,7 @@ final class QuizModel: ObservableObject {
 
         phase = .judging
         heardText = candidates.first ?? ""
-        let isCorrect = KanaMatcher.matches(target: question.kana, candidates: candidates)
+        let isCorrect = KanaMatcher.matches(question, candidates: candidates)
         record(question: question, isCorrect: isCorrect, heard: candidates.joined(separator: " / "))
 
         if isCorrect {

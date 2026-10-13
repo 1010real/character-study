@@ -4,13 +4,18 @@
 
 ## ひらがなクイズ（`HiraganaQuiz.swiftpm`）
 
-1. ひらがなを1文字表示する
+1. ひらがなを表示する
 2. 子どもが声に出して読む（マイクで聞き取る）
 3. 合っていれば「せいかい！」、違えば「ちがうよ？ ただしくは〇〇だよ」と読み上げる
 4. これを10問くり返す
 
+モードは2つあります。名前を選んだあとの画面で選びます。
+
+- **ひらがな 1もじ**: 基本のひらがな46文字から1文字ずつ出題
+- **ことば 2〜3もじ**: 「いぬ」「さくら」のような2〜3文字の言葉を出題（濁点や小さい文字を含まない、基本のひらがなだけの言葉48語）
+
 - 起動時に子どもの名前を選ぶとその子として遊べます（パスワードなし）。アカウントは「＋ ふやす」で追加し、長押しで削除します。
-- 回答するたびに **日時・設問ID・正解/不正解** などを端末内に記録します。名前を選んだあとの「きろく」画面で、文字ごとの正答率と履歴を確認したり、CSV で書き出したりできます。
+- 回答するたびに **日時・設問ID・正解/不正解** などを端末内に記録します。名前を選んだあとの「きろく」画面で、モード別・問題ごとの正答率と履歴を確認したり、CSV で書き出したりできます。
 - 音声認識と読み上げには iPhone / Mac に標準で入っている機能（Speech / AVSpeechSynthesizer）を使います。
 
 ### 必要なもの
@@ -55,8 +60,12 @@
 
 ### 設問ID
 
-設問IDは `hira_` + ローマ字で固定しています（例: `hira_a`、`hira_ka`、`hira_shi`、`hira_wo`、`hira_n`）。
-一覧は `HiraganaQuiz.swiftpm/Hiragana.swift` にあります。
+設問IDは「モードの接頭辞 + ローマ字」で固定しています。
+
+- ひらがな 1もじ: `hira_` + ローマ字（例: `hira_a`、`hira_ka`、`hira_shi`、`hira_wo`、`hira_n`）。一覧は `HiraganaQuiz.swiftpm/Hiragana.swift`
+- ことば 2〜3もじ: `word_` + ローマ字（例: `word_inu`、`word_sakura`）。一覧は `HiraganaQuiz.swiftpm/Words.swift`
+
+言葉を増やすときは `Words.swift` の表に1行追加します。音声認識は言葉を漢字で返すことが多いので、「犬」のような漢字の書き方も一緒に登録してください。
 
 CSV の列: `answeredAt, profile, questionID, kana, isCorrect(1/0), attempt(同じ問題の何回目か), heardText(聞き取った言葉), sessionID(10問セットごとのID)`
 
@@ -72,7 +81,9 @@ CSV の列: `answeredAt, profile, questionID, kana, isCorrect(1/0), attempt(同�
 | ファイル | 内容 |
 | --- | --- |
 | `Package.swift` | アプリの設定（名前、バンドルID、マイク・音声認識の許可文） |
+| `QuizMode.swift` | 出題モード（ひらがな 1もじ / ことば 2〜3もじ） |
 | `Hiragana.swift` | 出題するひらがなと設問ID |
+| `Words.swift` | 出題する言葉と設問ID、認識されやすい漢字の書き方 |
 | `QuestionPicker.swift` | 出題の選び方（今はランダム。将来、苦手な文字を多く出すように変更する場所） |
 | `QuizModel.swift` | クイズの進行と回答の記録 |
 | `SpeechListener.swift` | 録音と音声認識 |

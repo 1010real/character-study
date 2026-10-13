@@ -151,23 +151,25 @@ struct ProfileHomeView: View {
     @Environment(\.modelContext) private var context
 
     var body: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 24) {
             Spacer()
             Text(profile.emoji)
                 .font(.system(size: 96))
             Text("\(profile.name) さん")
                 .font(.system(size: 36, weight: .bold, design: .rounded))
 
-            NavigationLink {
-                QuizView(profile: profile, context: context)
-            } label: {
-                Label("ひらがな クイズ", systemImage: "play.fill")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 18)
+            ForEach(QuizMode.allCases) { mode in
+                NavigationLink {
+                    QuizView(profile: profile, mode: mode, context: context)
+                } label: {
+                    Label(mode.title, systemImage: mode.systemImage)
+                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .frame(minWidth: 240)
+                        .padding(.vertical, 14)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(mode == .hiragana ? .orange : .pink)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.orange)
 
             Spacer()
 
