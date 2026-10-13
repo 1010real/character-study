@@ -120,22 +120,11 @@ struct QuizView: View {
                     Button {
                         Task { await model.choose(option) }
                     } label: {
-                        Image(option.imageName ?? "")
-                            .resizable()
-                            .scaledToFit()
-                            .clipShape(RoundedRectangle(cornerRadius: 20))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .stroke(borderColor(for: option), lineWidth: 6)
-                            )
-                            .overlay(alignment: .topTrailing) {
-                                if model.phase == .correct, option.id == model.current?.id {
-                                    Text("⭕️").font(.system(size: 44)).offset(x: 8, y: -8)
-                                }
-                            }
+                        pictureOption(option)
                     }
                     .buttonStyle(.plain)
-                    .disabled(model.phase != .ready)
+                    // .disabled だと4枚とも薄く表示されるので、タップだけを止める
+                    .allowsHitTesting(model.phase == .ready)
                     .accessibilityLabel(option.kana)
                 }
             }
@@ -155,16 +144,47 @@ struct QuizView: View {
         }
     }
 
-    /// 答えたあとに、正解の絵を緑、まちがえて選んだ絵を赤でかこむ
-    private func borderColor(for option: Question) -> Color {
-        switch model.phase {
-        case .correct, .wrong:
-            if option.id == model.current?.id { return .green }
-            if option.id == model.selectedID { return .red }
-            return .clear
-        default:
-            return .clear
-        }
+    private var answered: Bool {
+        model.phase == .correct || model.phase == .wrong
+    }
+
+    /// 絵1枚。答えたあとは
+    /// - 正解の絵: そのままの明るさで少し大きくし、緑のふちと大きな ◯ を重ねる
+    /// - まちがえて選んだ絵: 赤のふちと大きな ✗ を重ねる
+    /// - それ以外の絵: 薄くする
+    private func pictureOption(_ option: Question) -> some View {
+        let isAnswer = answered && option.id == model.current?.id
+        let isWrongChoice = model.phase == .wrong && option.id == model.selectedID
+
+        return Image(option.imageName ?? "")
+            .resizable()
+            .scaledToFit()
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .opacity(!answered || isAnswer ? 1 : isWrongChoice ? 0.7 : 0.25)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(isAnswer ? Color.green : isWrongChoice ? Color.red : Color.clear,
+                            lineWidth: isAnswer ? 10 : 6)
+            )
+            .overlay {
+                if isAnswer {
+                    // 赤い二重まる
+                    ZStack {
+                        Circle().stroke(Color.red, lineWidth: 14)
+                        Circle().stroke(Color.red, lineWidth: 6).padding(26)
+                    }
+                    .padding(14)
+                    .shadow(color: .white, radius: 3)
+                    .transition(.scale(scale: 0.3).combined(with: .opacity))
+                } else if isWrongChoice {
+                    Cross()
+                        .stroke(Color.blue, style: StrokeStyle(lineWidth: 16, lineCap: .round))
+                        .padding(30)
+                        .shadow(color: .white, radius: 3)
+                        .transition(.scale(scale: 0.3).combined(with: .opacity))
+                }
+            }
+            .scaleEffect(isAnswer ? 1.06 : 1)
     }
 
     private var cardColor: Color {
@@ -258,5 +278,17 @@ struct QuizView: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
         }
+    }
+}
+
+/// ✗ じるし（左上→右下、右上→左下の2本線）
+private struct Cross: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.move(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        return path
     }
 }
