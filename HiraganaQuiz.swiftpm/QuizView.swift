@@ -17,8 +17,10 @@ struct QuizView: View {
                     permissionMessage
                 } else if model.phase == .finished {
                     resultView
-                } else {
+                } else if model.mode.usesVoice {
                     questionView
+                } else {
+                    pictureQuestionView
                 }
             } else {
                 ProgressView()
@@ -29,7 +31,8 @@ struct QuizView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             guard authorized == nil else { return }
-            authorized = await SpeechListener.requestAuthorization()
+            // 絵を選ぶモードはマイクを使わないので許可はいらない
+            authorized = model.mode.usesVoice ? await SpeechListener.requestAuthorization() : true
             model.start()
         }
         .onDisappear { model.cancel() }
@@ -88,6 +91,98 @@ struct QuizView: View {
         case 2: return 130
         default: return 96
         }
+    }
+
+    // MARK: - 絵を選ぶ問題
+
+    private var pictureQuestionView: some View {
+        VStack(spacing: 16) {
+            Text("\(model.index + 1) / \(model.questions.count)")
+                .font(.system(size: 22, weight: .semibold, design: .rounded))
+                .foregroundStyle(.secondary)
+
+            Text(model.current?.kana ?? "")
+                .font(.system(size: 72, weight: .bold, design: .rounded))
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .padding(.horizontal, 32)
+                .padding(.vertical, 8)
+                .background(cardColor.opacity(0.18), in: RoundedRectangle(cornerRadius: 28))
+
+            Text(model.message)
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .multilineTextAlignment(.center)
+                .frame(minHeight: 56)
+
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)],
+                      spacing: 16) {
+                ForEach(model.options) { option in
+                    Button {
+                        Task { await model.choose(option) }
+                    } label: {
+                        pictureOption(option)
+                    }
+                    .buttonStyle(.plain)
+                    // .disabled だと4枚とも薄く表示されるので、タップだけを止める
+                    .allowsHitTesting(model.phase == .ready)
+                    .accessibilityLabel(option.kana)
+                }
+            }
+            .frame(maxWidth: 480)
+            .animation(.spring, value: model.phase)
+
+            if model.phase == .wrong {
+                Button {
+                    model.next()
+                } label: {
+                    Label("つぎへ", systemImage: "arrow.right")
+                }
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .buttonStyle(.bordered)
+                .tint(.orange)
+            }
+        }
+    }
+
+    private var answered: Bool {
+        model.phase == .correct || model.phase == .wrong
+    }
+
+    /// 絵1枚。答えたあとは
+    /// - 正解の絵: そのままの明るさで少し大きくし、緑のふちと大きな赤い ◯ を重ねる
+    /// - まちがえて選んだ絵: 赤のふちと大きな ✗ を重ねる
+    /// - それ以外の絵: 薄くする
+    private func pictureOption(_ option: Question) -> some View {
+        let isAnswer = answered && option.id == model.current?.id
+        let isWrongChoice = model.phase == .wrong && option.id == model.selectedID
+
+        return Image(option.imageName ?? "")
+            .resizable()
+            .scaledToFit()
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .opacity(!answered || isAnswer ? 1 : isWrongChoice ? 0.7 : 0.25)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(isAnswer ? Color.green : isWrongChoice ? Color.red : Color.clear,
+                            lineWidth: isAnswer ? 10 : 6)
+            )
+            .overlay {
+                if isAnswer {
+                    // 赤い大きなまる
+                    Circle()
+                        .stroke(Color.red, lineWidth: 16)
+                        .padding(18)
+                    .shadow(color: .white, radius: 3)
+                    .transition(.scale(scale: 0.3).combined(with: .opacity))
+                } else if isWrongChoice {
+                    Cross()
+                        .stroke(Color.blue, style: StrokeStyle(lineWidth: 16, lineCap: .round))
+                        .padding(30)
+                        .shadow(color: .white, radius: 3)
+                        .transition(.scale(scale: 0.3).combined(with: .opacity))
+                }
+            }
+            .scaleEffect(isAnswer ? 1.06 : 1)
     }
 
     private var cardColor: Color {
@@ -181,5 +276,17 @@ struct QuizView: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
         }
+    }
+}
+
+/// ✗ じるし（左上→右下、右上→左下の2本線）
+private struct Cross: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.move(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        return path
     }
 }

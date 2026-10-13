@@ -4,7 +4,7 @@ import SwiftData
 @MainActor
 final class QuizModel: ObservableObject {
     enum Phase: Equatable {
-        case ready      // 発音を待っている
+        case ready      // 答えを待っている
         case listening  // 録音中
         case judging    // 判定中
         case correct
@@ -22,6 +22,10 @@ final class QuizModel: ObservableObject {
     /// 直近に聞き取った言葉（保護者向けの確認用）
     @Published private(set) var heardText = ""
     @Published private(set) var message = ""
+    /// 「えを えらぶ」モードの選択肢（正解を含む4つ）
+    @Published private(set) var options: [Question] = []
+    /// 「えを えらぶ」モードで選んだ選択肢
+    @Published private(set) var selectedID: String?
     @Published var errorMessage: String?
 
     private let profile: Profile
@@ -50,10 +54,47 @@ final class QuizModel: ObservableObject {
         questions = picker.pick(from: mode.questions, count: questionCount, history: profile.answers)
         index = 0
         score = 0
+        prepareQuestion()
+    }
+
+    /// いまの問題を出す準備
+    private func prepareQuestion() {
         attempt = 1
         heardText = ""
-        message = "こえに だして よんでね"
+        selectedID = nil
+        message = readyMessage
+        options = mode == .picture ? makeOptions() : []
         phase = .ready
+    }
+
+    private var readyMessage: String {
+        mode.usesVoice ? "こえに だして よんでね" : "あう えを えらんでね"
+    }
+
+    /// 正解と、ほかの問題からランダムに選んだ絵を合わせて並べる
+    private func makeOptions() -> [Question] {
+        guard let question = current else { return [] }
+        let others = mode.questions.filter { $0.id != question.id }
+            .shuffled()
+            .prefix(QuizMode.pictureChoiceCount - 1)
+        return (Array(others) + [question]).shuffled()
+    }
+
+    /// 「えを えらぶ」モードで絵を選んだとき
+    func choose(_ option: Question) async {
+        guard let question = current, phase == .ready else { return }
+        selectedID = option.id
+        let isCorrect = option.id == question.id
+        record(question: question, isCorrect: isCorrect, heard: option.kana)
+
+        if isCorrect {
+            await celebrate(question)
+        } else {
+            phase = .wrong
+            message = "ちがうよ？ 「\(question.kana)」は これだよ"
+            let spoken = Hiragana.spokenForm(of: question.kana)
+            await speaker.speak("ちがうよ？ 「\(spoken)」は、これ だよ")
+        }
     }
 
     func listen() async {
@@ -68,7 +109,7 @@ final class QuizModel: ObservableObject {
             candidates = try await listener.listen(hints: mode.recognitionHints)
         } catch {
             errorMessage = error.localizedDescription
-            message = "こえに だして よんでね"
+            message = readyMessage
             phase = .ready
             return
         }
@@ -89,18 +130,23 @@ final class QuizModel: ObservableObject {
         record(question: question, isCorrect: isCorrect, heard: candidates.joined(separator: " / "))
 
         if isCorrect {
-            score += 1
-            phase = .correct
-            message = "せいかい！"
-            await speaker.speak("せいかい！")
-            try? await Task.sleep(for: .seconds(0.5))
-            guard phase == .correct, current == question else { return }
-            next()
+            await celebrate(question)
         } else {
             phase = .wrong
             message = "ちがうよ？ ただしくは「\(question.kana)」だよ"
             await speakCorrectAnswer(prefix: "ちがうよ？")
         }
+    }
+
+    /// 正解したときの共通の流れ: ほめて、少し待って次の問題へ
+    private func celebrate(_ question: Question) async {
+        score += 1
+        phase = .correct
+        message = "せいかい！"
+        await speaker.speak("せいかい！")
+        try? await Task.sleep(for: .seconds(0.5))
+        guard phase == .correct, current == question else { return }
+        next()
     }
 
     /// 録音を途中で止めて判定する
@@ -120,10 +166,7 @@ final class QuizModel: ObservableObject {
         speaker.stop()
         if index + 1 < questions.count {
             index += 1
-            attempt = 1
-            heardText = ""
-            message = "こえに だして よんでね"
-            phase = .ready
+            prepareQuestion()
         } else {
             phase = .finished
             let text = "おしまい！ \(questions.count)もん ちゅう、\(score)もん せいかい！"

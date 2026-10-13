@@ -55,7 +55,7 @@ struct HistoryView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(record.answeredAt, format: .dateTime.year().month().day().hour().minute())
                                     .font(.subheadline)
-                                Text("\(record.questionID)・\(record.attempt)かいめ・きこえた: \(record.heardText)")
+                                Text("\(record.questionID)・\(record.attempt)かいめ・\(record.questionID.hasPrefix("pict_") ? "えらんだ" : "きこえた"): \(record.heardText)")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }

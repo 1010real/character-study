@@ -7,6 +7,8 @@ struct Question: Identifiable, Hashable {
     let kana: String
     /// 音声認識が返しそうな別の書き方（「いぬ」→「犬」など）。これと一致しても正解にする。
     var alternatives: [String] = []
+    /// 絵の名前（Assets.xcassets の画像セット名）。絵がない問題は nil。
+    var imageName: String? = nil
 }
 
 enum Hiragana {
