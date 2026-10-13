@@ -149,7 +149,7 @@ struct QuizView: View {
     }
 
     /// 絵1枚。答えたあとは
-    /// - 正解の絵: そのままの明るさで少し大きくし、緑のふちと大きな ◯ を重ねる
+    /// - 正解の絵: そのままの明るさで少し大きくし、緑のふちと大きな赤い ◯ を重ねる
     /// - まちがえて選んだ絵: 赤のふちと大きな ✗ を重ねる
     /// - それ以外の絵: 薄くする
     private func pictureOption(_ option: Question) -> some View {
@@ -168,12 +168,10 @@ struct QuizView: View {
             )
             .overlay {
                 if isAnswer {
-                    // 赤い二重まる
-                    ZStack {
-                        Circle().stroke(Color.red, lineWidth: 14)
-                        Circle().stroke(Color.red, lineWidth: 6).padding(26)
-                    }
-                    .padding(14)
+                    // 赤い大きなまる
+                    Circle()
+                        .stroke(Color.red, lineWidth: 16)
+                        .padding(18)
                     .shadow(color: .white, radius: 3)
                     .transition(.scale(scale: 0.3).combined(with: .opacity))
                 } else if isWrongChoice {
