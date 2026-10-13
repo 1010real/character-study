@@ -8,10 +8,18 @@ enum KanaMatcher {
     }
 
     static func matches(target: String, heard: String) -> Bool {
+        let accepted = [target] + (Hiragana.sameSound[target].map(Array.init) ?? [])
+
+        // 1音だけの発話は「歩」「木」のような同じ音の漢字1文字で返ってくることが多い。
+        // 漢字1文字の読みは1つに決まらない（「歩」は ほ・ふ・ある…）ので、表で判定する。
+        let core = heard.filter { !$0.isWhitespace && !$0.isPunctuation && $0 != "ー" }
+        if let kanji = core.first, core.allSatisfy({ $0 == kanji }),
+           accepted.contains(where: { Hiragana.kanjiHomophones[$0]?.contains(kanji) == true }) {
+            return true
+        }
+
         let reading = hiraganaReading(of: heard)
         guard !reading.isEmpty else { return false }
-
-        let accepted = [target] + (Hiragana.sameSound[target].map(Array.init) ?? [])
         return accepted.contains { isSameSound(kana: $0, reading: reading) }
     }
 
