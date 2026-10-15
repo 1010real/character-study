@@ -59,7 +59,6 @@ enum Words {
     ]
 
     /// 4〜5文字の言葉。こちらも基本のひらがなだけでできた言葉にしている。
-    /// 絵がまだ無い言葉は `longWordsWithoutPicture` に入れておく（「えを えらぶ」には出さない）。
     private static let longTable: [(String, String, [String])] = [
         // 4もじ
         ("himawari", "ひまわり", ["向日葵"]),
@@ -93,8 +92,6 @@ enum Words {
         ("hinamatsuri", "ひなまつり", ["雛祭り"]),
         ("okaasan", "おかあさん", ["お母さん"]),
         ("otousan", "おとうさん", ["お父さん"]),
-        ("oniisan", "おにいさん", ["お兄さん"]),
-        ("oneesan", "おねえさん", ["お姉さん"]),
     ]
 
     /// 「ことば 2〜3もじ」モード（声に出して読む）の問題
@@ -104,16 +101,7 @@ enum Words {
 
     /// 「ことば 4〜5もじ」モード（声に出して読む）の問題。ID は 2〜3もじ と同じく「word_ + ローマ字」。
     static let longQuestions: [Question] = longTable.map {
-        Question(id: "word_\($0.0)", kana: $0.1, alternatives: $0.2, imageName: longImageName($0.0))
-    }
-
-    /// 絵がまだ無い4〜5文字の言葉。絵を追加したらここから消す。
-    private static let longWordsWithoutPicture: Set<String> = [
-        "sentakuki", "sakuramochi", "hinamatsuri", "okaasan", "otousan", "oniisan", "oneesan",
-    ]
-
-    private static func longImageName(_ romaji: String) -> String? {
-        longWordsWithoutPicture.contains(romaji) ? nil : imageName(romaji)
+        Question(id: "word_\($0.0)", kana: $0.1, alternatives: $0.2, imageName: imageName($0.0))
     }
 
     /// 「えを えらぶ」モードの問題。読む問題と記録を分けるため ID は「pict_ + ローマ字」。
@@ -122,9 +110,8 @@ enum Words {
     }
 
     /// 「えを えらぶ 4〜5もじ」モードの問題。ID は「pict_ + ローマ字」。
-    static let longPictureQuestions: [Question] = longTable.compactMap {
-        guard let image = longImageName($0.0) else { return nil }
-        return Question(id: "pict_\($0.0)", kana: $0.1, imageName: image)
+    static let longPictureQuestions: [Question] = longTable.map {
+        Question(id: "pict_\($0.0)", kana: $0.1, imageName: imageName($0.0))
     }
 
     /// 絵は Assets.xcassets/Words/word_<ローマ字>.imageset に入っている
