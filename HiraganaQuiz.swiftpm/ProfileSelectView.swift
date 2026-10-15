@@ -158,18 +158,21 @@ struct ProfileHomeView: View {
             Text("\(profile.name) さん")
                 .font(.system(size: 36, weight: .bold, design: .rounded))
 
-            ForEach(QuizMode.allCases) { mode in
-                NavigationLink {
-                    QuizView(profile: profile, mode: mode, context: context)
-                } label: {
-                    Label(mode.title, systemImage: mode.systemImage)
-                        .font(.system(size: 26, weight: .bold, design: .rounded))
-                        .frame(minWidth: 240)
-                        .padding(.vertical, 14)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(tint(for: mode))
+            NavigationLink {
+                PronunciationMenuView(profile: profile)
+            } label: {
+                MenuButtonLabel(title: "はつおん", systemImage: "mic.fill")
             }
+            .buttonStyle(.borderedProminent)
+            .tint(.orange)
+
+            NavigationLink {
+                QuizView(profile: profile, mode: .picture, context: context)
+            } label: {
+                MenuButtonLabel(title: QuizMode.picture.title, systemImage: QuizMode.picture.systemImage)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(QuizMode.picture.tint)
 
             Spacer()
 
@@ -181,11 +184,54 @@ struct ProfileHomeView: View {
             .padding(.bottom, 24)
         }
     }
+}
 
-    private func tint(for mode: QuizMode) -> Color {
-        switch mode {
+/// 「はつおん」を選んだあとに、何文字でやるかを選ぶ画面
+struct PronunciationMenuView: View {
+    let profile: Profile
+    @Environment(\.modelContext) private var context
+
+    var body: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            Text("なんもじで やる？")
+                .font(.system(size: 32, weight: .bold, design: .rounded))
+
+            ForEach(QuizMode.pronunciationModes) { mode in
+                NavigationLink {
+                    QuizView(profile: profile, mode: mode, context: context)
+                } label: {
+                    MenuButtonLabel(title: mode.shortTitle, systemImage: mode.systemImage)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(mode.tint)
+            }
+            Spacer()
+        }
+        .navigationTitle("はつおん")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// メニューの大きなボタンの中身
+private struct MenuButtonLabel: View {
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        Label(title, systemImage: systemImage)
+            .font(.system(size: 26, weight: .bold, design: .rounded))
+            .frame(minWidth: 240)
+            .padding(.vertical, 14)
+    }
+}
+
+private extension QuizMode {
+    var tint: Color {
+        switch self {
         case .hiragana: return .orange
         case .word: return .pink
+        case .longWord: return .purple
         case .picture: return .teal
         }
     }

@@ -26,7 +26,45 @@ enum KanaMatcher {
 
         let reading = hiraganaReading(of: heard)
         guard !reading.isEmpty else { return false }
-        return accepted.contains { isSameSound(kana: $0, reading: reading) }
+        if accepted.contains(where: { isSameSound(kana: $0, reading: reading) }) {
+            return true
+        }
+
+        // 「ひこうき」が「ヒコーキ」、「ふうせん」が「フーセン」のように、のばす音を「ー」で返されることがある
+        let heardKey = longVowelInsensitiveKey(hiraganaKeepingLongMark(heard))
+        return accepted.contains { longVowelInsensitiveKey($0) == heardKey }
+    }
+
+    /// のばす音を取りのぞいて比べるためのキー。
+    /// 「ー」と、前の文字と同じ母音をのばしている「あいうえお」（こう・こお・けい・さあ…）を消す。
+    /// 例: 「ひこうき」「ひこーき」→「ひこき」、「おねえさん」→「おねさん」
+    static func longVowelInsensitiveKey(_ text: String) -> String {
+        var result = ""
+        var previousVowel: Character?
+        for c in text {
+            if c == "ー" { continue }
+            if let previousVowel, lengthens(c, after: previousVowel) { continue }
+            result.append(c)
+            previousVowel = vowel(of: String(c))
+        }
+        return result
+    }
+
+    /// 母音 `vowel` の音のあとで、`c` がその音をのばしているだけか
+    private static func lengthens(_ c: Character, after vowel: Character) -> Bool {
+        switch (vowel, c) {
+        case ("あ", "あ"), ("い", "い"), ("う", "う"), ("え", "え"), ("え", "い"), ("お", "お"), ("お", "う"):
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// 「ー」を残したまま、ひらがなにする（カタカナ→ひらがな、漢字は読みに変換）
+    private static func hiraganaKeepingLongMark(_ text: String) -> String {
+        let hiragana = text.applyingTransform(.hiraganaToKatakana, reverse: true) ?? text
+        let converted = containsKanji(hiragana) ? readingOfKanji(hiragana) : hiragana
+        return String(converted.filter { isHiragana($0) || $0 == "ー" })
     }
 
     /// 「か」「かあ」「かっ」「かか」「いぬー」のように、目標＋（最後の文字・その母音・小さい母音・っ）だけなら同じ音とみなす。

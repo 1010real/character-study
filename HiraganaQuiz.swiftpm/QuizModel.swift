@@ -106,7 +106,9 @@ final class QuizModel: ObservableObject {
 
         let candidates: [String]
         do {
-            candidates = try await listener.listen(hints: mode.recognitionHints)
+            candidates = try await listener.listen(hints: mode.recognitionHints,
+                                                   maxDuration: mode.listenTiming.max,
+                                                   silenceAfterSpeech: mode.listenTiming.silence)
         } catch {
             errorMessage = error.localizedDescription
             message = readyMessage
