@@ -4,15 +4,37 @@ import Foundation
 enum QuizMode: String, CaseIterable, Identifiable {
     case hiragana   // ひらがな1文字
     case word       // 2〜3文字の言葉
-    case picture    // 言葉を読んで、あう絵を4つから選ぶ
+    case longWord   // 4〜5文字の言葉
+    case picture    // 2〜3文字の言葉を読んで、あう絵を4つから選ぶ
+    case longPicture // 4〜5文字の言葉を読んで、あう絵を4つから選ぶ
 
     var id: String { rawValue }
 
+    /// 「はつおん」メニューの中にあるモード（文字数を選ぶ）
+    static let pronunciationModes: [QuizMode] = [.hiragana, .word, .longWord]
+
+    /// 「えを えらぶ」メニューの中にあるモード（文字数を選ぶ）
+    static let pictureModes: [QuizMode] = [.picture, .longPicture]
+
+    /// 画面上部やきろく画面に出す名前
     var title: String {
         switch self {
-        case .hiragana: return "ひらがな 1もじ"
-        case .word: return "ことば 2〜3もじ"
-        case .picture: return "えを えらぶ"
+        case .hiragana: return "はつおん 1もじ"
+        case .word: return "はつおん 2〜3もじ"
+        case .longWord: return "はつおん 4〜5もじ"
+        case .picture: return "えを えらぶ 2〜3もじ"
+        case .longPicture: return "えを えらぶ 4〜5もじ"
+        }
+    }
+
+    /// メニューのボタンに出す名前（文字数）
+    var shortTitle: String {
+        switch self {
+        case .hiragana: return "1もじ"
+        case .word: return "2〜3もじ"
+        case .longWord: return "4〜5もじ"
+        case .picture: return "2〜3もじ"
+        case .longPicture: return "4〜5もじ"
         }
     }
 
@@ -20,7 +42,9 @@ enum QuizMode: String, CaseIterable, Identifiable {
         switch self {
         case .hiragana: return "character"
         case .word: return "text.bubble"
-        case .picture: return "photo.on.rectangle"
+        case .longWord: return "text.bubble.fill"
+        case .picture: return "photo"
+        case .longPicture: return "photo.on.rectangle"
         }
     }
 
@@ -28,13 +52,32 @@ enum QuizMode: String, CaseIterable, Identifiable {
         switch self {
         case .hiragana: return Hiragana.questions
         case .word: return Words.questions
+        case .longWord: return Words.longQuestions
         case .picture: return Words.pictureQuestions
+        case .longPicture: return Words.longPictureQuestions
         }
     }
 
     /// 声で答えるモードか（マイクと音声認識を使うか）
     var usesVoice: Bool {
-        self != .picture
+        !usesPictures
+    }
+
+    /// 絵を4つから選ぶモードか
+    var usesPictures: Bool {
+        self == .picture || self == .longPicture
+    }
+
+    /// 録音の長さ（秒）。長い言葉は1文字ずつゆっくり読むことが多いので、長めに待つ。
+    /// - max: 最大の録音時間
+    /// - silence: 声が聞こえたあと、この時間しゃべらなければ終わる
+    var listenTiming: (max: TimeInterval, silence: TimeInterval) {
+        switch self {
+        case .hiragana: return (4, 1.0)
+        case .word: return (5, 1.2)
+        case .longWord: return (8, 1.8)
+        case .picture, .longPicture: return (0, 0)
+        }
     }
 
     /// 絵を選ぶときの選択肢の数
@@ -45,9 +88,9 @@ enum QuizMode: String, CaseIterable, Identifiable {
         switch self {
         case .hiragana:
             return Hiragana.allKana
-        case .word:
+        case .word, .longWord:
             return Array(questions.flatMap { [$0.kana] + $0.alternatives.prefix(1) }.prefix(100))
-        case .picture:
+        case .picture, .longPicture:
             return []
         }
     }
