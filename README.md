@@ -73,7 +73,6 @@
 言葉を増やすときは `Words.swift` の表に1行追加します。音声認識は言葉を漢字で返すことが多いので、「犬」のような漢字の書き方も一緒に登録してください。
 あわせて絵を `HiraganaQuiz.swiftpm/Assets.xcassets/Words/word_<ローマ字>.imageset/` に追加します（Xcode で `Assets.xcassets` を開き、`Words` フォルダに画像をドラッグして名前を `word_<ローマ字>` にするのが簡単です）。
 
-
 CSV の列: `answeredAt, profile, questionID, kana, isCorrect(1/0), attempt(同じ問題の何回目か), heardText(聞き取った言葉。「えを えらぶ」では選んだ絵の言葉), sessionID(10問セットごとのID)`
 
 ### うまく聞き取れないとき
