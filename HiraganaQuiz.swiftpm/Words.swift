@@ -58,7 +58,8 @@ enum Words {
         ("futon", "ふとん", ["布団"]),
     ]
 
-    /// 4〜5文字の言葉（絵はまだ無い）。こちらも基本のひらがなだけでできた言葉にしている。
+    /// 4〜5文字の言葉。こちらも基本のひらがなだけでできた言葉にしている。
+    /// 絵は今は仮のもの（絵文字から作った画像）。本番の絵ができたら同じ名前の PNG に差し替える。
     private static let longTable: [(String, String, [String])] = [
         // 4もじ
         ("himawari", "ひまわり", ["向日葵"]),
@@ -102,11 +103,16 @@ enum Words {
 
     /// 「ことば 4〜5もじ」モード（声に出して読む）の問題。ID は 2〜3もじ と同じく「word_ + ローマ字」。
     static let longQuestions: [Question] = longTable.map {
-        Question(id: "word_\($0.0)", kana: $0.1, alternatives: $0.2)
+        Question(id: "word_\($0.0)", kana: $0.1, alternatives: $0.2, imageName: imageName($0.0))
     }
 
     /// 「えを えらぶ」モードの問題。読む問題と記録を分けるため ID は「pict_ + ローマ字」。
     static let pictureQuestions: [Question] = table.map {
+        Question(id: "pict_\($0.0)", kana: $0.1, imageName: imageName($0.0))
+    }
+
+    /// 「えを えらぶ 4〜5もじ」モードの問題。ID は「pict_ + ローマ字」。
+    static let longPictureQuestions: [Question] = longTable.map {
         Question(id: "pict_\($0.0)", kana: $0.1, imageName: imageName($0.0))
     }
 

@@ -63,7 +63,7 @@ final class QuizModel: ObservableObject {
         heardText = ""
         selectedID = nil
         message = readyMessage
-        options = mode == .picture ? makeOptions() : []
+        options = mode.usesPictures ? makeOptions() : []
         phase = .ready
     }
 

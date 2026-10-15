@@ -159,7 +159,7 @@ struct ProfileHomeView: View {
                 .font(.system(size: 36, weight: .bold, design: .rounded))
 
             NavigationLink {
-                PronunciationMenuView(profile: profile)
+                ModeMenuView(profile: profile, title: "はつおん", modes: QuizMode.pronunciationModes)
             } label: {
                 MenuButtonLabel(title: "はつおん", systemImage: "mic.fill")
             }
@@ -167,12 +167,12 @@ struct ProfileHomeView: View {
             .tint(.orange)
 
             NavigationLink {
-                QuizView(profile: profile, mode: .picture, context: context)
+                ModeMenuView(profile: profile, title: "えを えらぶ", modes: QuizMode.pictureModes)
             } label: {
-                MenuButtonLabel(title: QuizMode.picture.title, systemImage: QuizMode.picture.systemImage)
+                MenuButtonLabel(title: "えを えらぶ", systemImage: "photo.on.rectangle")
             }
             .buttonStyle(.borderedProminent)
-            .tint(QuizMode.picture.tint)
+            .tint(.teal)
 
             Spacer()
 
@@ -186,9 +186,11 @@ struct ProfileHomeView: View {
     }
 }
 
-/// 「はつおん」を選んだあとに、何文字でやるかを選ぶ画面
-struct PronunciationMenuView: View {
+/// 「はつおん」「えを えらぶ」を選んだあとに、何文字でやるかを選ぶ画面
+struct ModeMenuView: View {
     let profile: Profile
+    let title: String
+    let modes: [QuizMode]
     @Environment(\.modelContext) private var context
 
     var body: some View {
@@ -197,7 +199,7 @@ struct PronunciationMenuView: View {
             Text("なんもじで やる？")
                 .font(.system(size: 32, weight: .bold, design: .rounded))
 
-            ForEach(QuizMode.pronunciationModes) { mode in
+            ForEach(modes) { mode in
                 NavigationLink {
                     QuizView(profile: profile, mode: mode, context: context)
                 } label: {
@@ -208,7 +210,7 @@ struct PronunciationMenuView: View {
             }
             Spacer()
         }
-        .navigationTitle("はつおん")
+        .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -233,6 +235,7 @@ private extension QuizMode {
         case .word: return .pink
         case .longWord: return .purple
         case .picture: return .teal
+        case .longPicture: return .indigo
         }
     }
 }
