@@ -3,6 +3,8 @@ import Foundation
 /// 出題モード。モードを増やすときはここに追加する。
 enum QuizMode: String, CaseIterable, Identifiable {
     case hiragana   // ひらがな1文字
+    case dakuon     // 濁点・半濁点のついたひらがな1文字（が・ぱ）
+    case youon      // 小さい「ゃ・ゅ・ょ」がつく音（きゃ・しゅ）
     case word       // 2〜3文字の言葉
     case longWord   // 4〜5文字の言葉
     case picture    // 2〜3文字の言葉を読んで、あう絵を4つから選ぶ
@@ -11,7 +13,7 @@ enum QuizMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     /// 「はつおん」メニューの中にあるモード（文字数を選ぶ）
-    static let pronunciationModes: [QuizMode] = [.hiragana, .word, .longWord]
+    static let pronunciationModes: [QuizMode] = [.hiragana, .dakuon, .youon, .word, .longWord]
 
     /// 「えを えらぶ」メニューの中にあるモード（文字数を選ぶ）
     static let pictureModes: [QuizMode] = [.picture, .longPicture]
@@ -20,6 +22,8 @@ enum QuizMode: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .hiragana: return "はつおん 1もじ"
+        case .dakuon: return "はつおん 1もじ（が・ぱ）"
+        case .youon: return "はつおん 1もじ（きゃ・しゅ）"
         case .word: return "はつおん 2〜3もじ"
         case .longWord: return "はつおん 4〜5もじ"
         case .picture: return "えを えらぶ 2〜3もじ"
@@ -31,6 +35,8 @@ enum QuizMode: String, CaseIterable, Identifiable {
     var shortTitle: String {
         switch self {
         case .hiragana: return "1もじ"
+        case .dakuon: return "1もじ（が・ぱ）"
+        case .youon: return "1もじ（きゃ・しゅ）"
         case .word: return "2〜3もじ"
         case .longWord: return "4〜5もじ"
         case .picture: return "2〜3もじ"
@@ -41,6 +47,8 @@ enum QuizMode: String, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .hiragana: return "character"
+        case .dakuon: return "textformat"
+        case .youon: return "textformat.size"
         case .word: return "text.bubble"
         case .longWord: return "text.bubble.fill"
         case .picture: return "photo"
@@ -51,6 +59,8 @@ enum QuizMode: String, CaseIterable, Identifiable {
     var questions: [Question] {
         switch self {
         case .hiragana: return Hiragana.questions
+        case .dakuon: return Hiragana.dakuonQuestions
+        case .youon: return Hiragana.youonQuestions
         case .word: return Words.questions
         case .longWord: return Words.longQuestions
         case .picture: return Words.pictureQuestions
@@ -73,7 +83,7 @@ enum QuizMode: String, CaseIterable, Identifiable {
     /// - silence: 声が聞こえたあと、この時間しゃべらなければ終わる
     var listenTiming: (max: TimeInterval, silence: TimeInterval) {
         switch self {
-        case .hiragana: return (4, 1.0)
+        case .hiragana, .dakuon, .youon: return (4, 1.0)
         case .word: return (5, 1.2)
         case .longWord: return (8, 1.8)
         case .picture, .longPicture: return (0, 0)
@@ -86,8 +96,8 @@ enum QuizMode: String, CaseIterable, Identifiable {
     /// 音声認識に「この中の言葉が言われやすい」と伝えるヒント（Apple の推奨上限 100 個まで）
     var recognitionHints: [String] {
         switch self {
-        case .hiragana:
-            return Hiragana.allKana
+        case .hiragana, .dakuon, .youon:
+            return questions.map(\.kana)
         case .word, .longWord:
             return Array(questions.flatMap { [$0.kana] + $0.alternatives.prefix(1) }.prefix(100))
         case .picture, .longPicture:

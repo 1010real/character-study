@@ -45,7 +45,8 @@ enum KanaMatcher {
             if c == "ー" { continue }
             if let previousVowel, lengthens(c, after: previousVowel) { continue }
             result.append(c)
-            previousVowel = vowel(of: String(c))
+            // 「きょ」の「ょ」のような小さい文字は、その母音で前の音を置きかえる
+            previousVowel = smallKanaVowels[c] ?? vowel(of: String(c))
         }
         return result
     }
@@ -82,6 +83,12 @@ enum KanaMatcher {
         return rest.allSatisfy { allowed.contains($0) }
     }
 
+    /// 小さい文字が表す母音（「きゃ」→「あ」、「しゅ」→「う」、「ちょ」→「お」）
+    private static let smallKanaVowels: [Character: Character] = [
+        "ゃ": "あ", "ゅ": "う", "ょ": "お",
+        "ぁ": "あ", "ぃ": "い", "ぅ": "う", "ぇ": "え", "ぉ": "お",
+    ]
+
     private static let smallVowels: [Character: Character] = [
         "あ": "ぁ", "い": "ぃ", "う": "ぅ", "え": "ぇ", "お": "ぉ",
     ]
@@ -109,6 +116,10 @@ enum KanaMatcher {
         if let digitReading = digitReadings[halfWidth] {
             return digitReading
         }
+        // 「じ」「び」「ぴ」が、アルファベットの「G」「B」「P」で返ってくることがある
+        if let letterReading = letterReadings[halfWidth.uppercased()] {
+            return letterReading
+        }
 
         let hiragana = text.applyingTransform(.hiraganaToKatakana, reverse: true) ?? text
         var converted = containsKanji(hiragana) ? readingOfKanji(hiragana) : hiragana
@@ -118,6 +129,10 @@ enum KanaMatcher {
         }
         return String(converted.filter(isHiragana))
     }
+
+    private static let letterReadings: [String: String] = [
+        "B": "び", "C": "し", "G": "じ", "P": "ぴ",
+    ]
 
     private static let digitReadings: [String: String] = [
         "1": "いち", "2": "に", "3": "さん", "4": "し", "5": "ご",

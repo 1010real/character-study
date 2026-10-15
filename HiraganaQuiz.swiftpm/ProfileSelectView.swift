@@ -232,6 +232,8 @@ private extension QuizMode {
     var tint: Color {
         switch self {
         case .hiragana: return .orange
+        case .dakuon: return .red
+        case .youon: return .brown
         case .word: return .pink
         case .longWord: return .purple
         case .picture: return .teal
