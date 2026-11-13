@@ -89,7 +89,9 @@ struct QuizView: View {
         switch model.current?.kana.count ?? 1 {
         case 1: return 180
         case 2: return 130
-        default: return 96
+        case 3: return 96
+        case 4: return 76
+        default: return 62
         }
     }
 
